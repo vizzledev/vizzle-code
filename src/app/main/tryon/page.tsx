@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Eye, Trash2, X } from "lucide-react";
+import { Upload, Eye, Trash2, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import TryOnModal from "@/components/TryOnModal";
+import { toast } from "react-hot-toast";
 
-export default function TryOnPage() {
+function TryOnPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -16,6 +18,8 @@ export default function TryOnPage() {
   const [garments, setGarments] = useState<any[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [modelImage, setModelImage] = useState<string | null>(null);
+  const [showTryOnModal, setShowTryOnModal] = useState(false);
+  const [selectedGarmentForTryOn, setSelectedGarmentForTryOn] = useState<any>(null);
 
   // shared input ref for both tabs
   const modelInputRef = useRef<HTMLInputElement | null>(null);
@@ -71,6 +75,39 @@ export default function TryOnPage() {
 
   const lastGarment =
     garments && garments.length > 0 ? garments[garments.length - 1] : null;
+
+  const handleCreateTryOn = () => {
+    if (!modelImage) {
+      toast.error("Please upload your photo first");
+      return;
+    }
+
+    if (tab === "single") {
+      if (!lastGarment) {
+        toast.error("Please select a garment");
+        return;
+      }
+      setSelectedGarmentForTryOn(lastGarment);
+      setShowTryOnModal(true);
+    } else {
+      // Multiple garments - for now, do first garment
+      if (garments.length === 0) {
+        toast.error("Please select at least one garment");
+        return;
+      }
+      setSelectedGarmentForTryOn(garments[0]);
+      setShowTryOnModal(true);
+    }
+  };
+
+  const handleTryOnSuccess = (resultUrl: string) => {
+    // Save result and navigate
+    localStorage.setItem("tryonResult", resultUrl);
+    localStorage.setItem("tryonGarmentName", selectedGarmentForTryOn?.name || "");
+    setTimeout(() => {
+      router.push("/main/tryonresult");
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center p-6 pb-24">
@@ -160,8 +197,13 @@ export default function TryOnPage() {
               </CardContent>
             </Card>
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              Create
+            <Button 
+              onClick={handleCreateTryOn}
+              disabled={!modelImage || !lastGarment}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create Virtual Try-On
             </Button>
           </TabsContent>
 
@@ -250,12 +292,29 @@ export default function TryOnPage() {
               </CardContent>
             </Card>
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              Create
+            <Button 
+              onClick={handleCreateTryOn}
+              disabled={!modelImage || garments.length === 0}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create Virtual Try-On
             </Button>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Try-On Modal */}
+      {showTryOnModal && selectedGarmentForTryOn && modelImage && (
+        <TryOnModal
+          isOpen={showTryOnModal}
+          onClose={() => setShowTryOnModal(false)}
+          humanImage={modelImage}
+          garmentImage={selectedGarmentForTryOn.image}
+          garmentName={selectedGarmentForTryOn.name}
+          onSuccess={handleTryOnSuccess}
+        />
+      )}
 
       {/* Single hidden input rendered ONCE and shared by both cards */}
       <input
@@ -289,5 +348,13 @@ export default function TryOnPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function TryOnPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-50"><div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div><p>Loading...</p></div></div>}>
+      <TryOnPageContent />
+    </Suspense>
   );
 }

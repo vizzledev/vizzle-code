@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { useWishlistStore } from "../store/wishlistStore";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,7 +14,7 @@ interface Product {
   category: string;
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
@@ -174,5 +174,13 @@ export default function HomePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }

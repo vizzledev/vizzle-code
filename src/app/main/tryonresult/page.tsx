@@ -1,23 +1,39 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Share2 } from "lucide-react";
-import { FaWhatsapp, FaFacebook, FaInstagram } from "react-icons/fa"; // 👈 social icons
+import { Share2, Download, Sparkles } from "lucide-react";
+import { FaWhatsapp, FaFacebook, FaInstagram } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 export default function TryOnResultPage() {
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [resultUrl, setResultUrl] = useState<string>("/v1.jpg");
+  const [garmentName, setGarmentName] = useState<string>("Product");
 
   useEffect(() => {
     const userAgent = navigator.userAgent || navigator.vendor;
     if (/android/i.test(userAgent) || /iPhone|iPad|iPod/i.test(userAgent)) {
       setIsMobile(true);
     }
+
+    // Load actual result from localStorage
+    const savedResult = localStorage.getItem("tryonResult");
+    const savedName = localStorage.getItem("tryonGarmentName");
+    
+    if (savedResult) {
+      setResultUrl(savedResult);
+    }
+    if (savedName) {
+      setGarmentName(savedName);
+    }
   }, []);
 
   const handleCustomShare = (platform: string) => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent("Check out my virtual try-on look!");
+    const text = encodeURIComponent(`Check out how ${garmentName} looks on me with Vizzle Virtual Try-On!`);
     let shareUrl = "";
 
     switch (platform) {
@@ -28,29 +44,54 @@ export default function TryOnResultPage() {
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
         break;
       case "instagram":
-        alert("To share on Instagram, please download and upload this image manually.");
+        toast.info("To share on Instagram, please download and upload this image manually.");
         return;
     }
 
     window.open(shareUrl, "_blank");
+    setShowShareOptions(false);
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(resultUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vizzle-tryon-${garmentName}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Downloaded successfully!");
+    } catch (error) {
+      toast.error("Download failed");
+    }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="w-[340px] bg-white rounded-2xl shadow-md p-5 border border-gray-100 relative">
+      <div className="w-[400px] max-w-[95vw] bg-white rounded-2xl shadow-lg p-6 border border-gray-100 relative">
         {/* Header */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-          Try On Result
-        </h2>
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-purple-500" />
+          <h2 className="text-xl font-semibold text-gray-800">
+            Try-On Result
+          </h2>
+        </div>
+
+        <p className="text-sm text-gray-600 text-center mb-4">
+          ✨ Your virtual try-on with <strong>{garmentName}</strong>
+        </p>
 
         {/* Image Container */}
-        <div className="relative rounded-xl overflow-hidden mb-4">
+        <div className="relative rounded-xl overflow-hidden mb-4 aspect-[3/4] bg-gray-100">
           <Image
-            src="/v1.jpg"
+            src={resultUrl}
             alt="Try On Result"
-            width={300}
-            height={400}
-            className="rounded-xl"
+            fill
+            className="rounded-xl object-contain"
           />
 
           {/* 🔹 Share Icon on Image */}
@@ -65,12 +106,19 @@ export default function TryOnResultPage() {
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-between mb-2">
-          <button className="px-4 py-2 bg-gray-200 rounded-lg text-gray-700">
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <button 
+            onClick={handleDownload}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition font-medium"
+          >
+            <Download className="w-4 h-4" />
             Download
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-            Buy Now
+          <button 
+            onClick={() => router.push("/main")}
+            className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+          >
+            Try Another
           </button>
         </div>
 
@@ -116,15 +164,12 @@ export default function TryOnResultPage() {
           </div>
         )}
 
-        {!isMobile && (
-          <p className="text-xs text-gray-400 text-center mt-3">
-            Share available only on mobile devices
-          </p>
-        )}
-
-        <p className="text-center text-sm text-blue-500 mt-4 cursor-pointer">
-          Try another outfit
-        </p>
+        <button
+          onClick={() => router.push("/main/tryon")}
+          className="w-full text-center text-sm text-gray-600 hover:text-purple-600 mt-2 py-2 font-medium"
+        >
+          Back to Try-On
+        </button>
       </div>
     </div>
   );

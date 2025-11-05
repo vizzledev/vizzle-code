@@ -1,0 +1,270 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { X, Loader2, Download, Share2, Sparkles } from "lucide-react";
+import { VizzleAPI } from "@/lib/api/vizzle-api";
+import { toast } from "react-hot-toast";
+
+interface TryOnModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  humanImage: string; // Base64 or URL
+  garmentImage: string; // URL from product
+  garmentName: string;
+  onSuccess?: (resultUrl: string) => void;
+}
+
+export default function TryOnModal({
+  isOpen,
+  onClose,
+  humanImage,
+  garmentImage,
+  garmentName,
+  onSuccess,
+}: TryOnModalProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  useEffect(() => {
+    if (isOpen && !resultUrl) {
+      handleTryOn();
+    }
+  }, [isOpen]);
+
+  const handleTryOn = async () => {
+    setIsProcessing(true);
+    setProgress(10);
+    setStatusMessage("Uploading your photo...");
+
+    try {
+      // Convert base64 to File if needed
+      let humanFile: File;
+      if (humanImage.startsWith("data:")) {
+        const response = await fetch(humanImage);
+        const blob = await response.blob();
+        humanFile = new File([blob], "human.jpg", { type: "image/jpeg" });
+      } else {
+        // If URL, fetch it
+        const response = await fetch(humanImage);
+        const blob = await response.blob();
+        humanFile = new File([blob], "human.jpg", { type: "image/jpeg" });
+      }
+
+      // Upload human image
+      const humanUploadResponse = await VizzleAPI.uploadHumanImage(humanFile);
+      setProgress(30);
+      setStatusMessage("Uploading garment...");
+
+      // Download garment from URL and upload
+      const garmentResponse = await fetch(garmentImage);
+      const garmentBlob = await garmentResponse.blob();
+      const garmentFile = new File([garmentBlob], "garment.jpg", {
+        type: "image/jpeg",
+      });
+
+      const garmentUploadResponse = await VizzleAPI.uploadGarmentImage(garmentFile);
+      setProgress(50);
+      setStatusMessage("Creating your virtual try-on...");
+
+      // Perform virtual try-on
+      const tryOnResponse = await VizzleAPI.performVirtualTryOn({
+        human_img: humanUploadResponse.url,
+        garm_img: garmentUploadResponse.url,
+        garment_type: "auto_detect",
+        use_vision: true,
+        params: {
+          category: "upper_body",
+          crop: false,
+          force_dc: false,
+          mask_only: false,
+          steps: 20,
+          seed: 42,
+        },
+      });
+
+      setProgress(70);
+      setStatusMessage("Processing... This may take 30-60 seconds");
+
+      // Wait for completion
+      const result = await VizzleAPI.waitForVirtualTryOn(tryOnResponse.id);
+
+      if (result.status === "succeeded" && result.output) {
+        const outputUrl = Array.isArray(result.output)
+          ? result.output[0]
+          : result.output;
+        setResultUrl(outputUrl as string);
+        setProgress(100);
+        setStatusMessage("Complete!");
+        toast.success("Try-on created successfully!");
+        
+        if (onSuccess) {
+          onSuccess(outputUrl as string);
+        }
+      } else if (result.status === "failed") {
+        throw new Error(result.error || "Try-on failed");
+      }
+    } catch (error) {
+      console.error("Try-on error:", error);
+      toast.error(error instanceof Error ? error.message : "Try-on failed");
+      setStatusMessage("Failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!resultUrl) return;
+
+    try {
+      const response = await fetch(resultUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vizzle-tryon-${garmentName}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Downloaded successfully!");
+    } catch (error) {
+      toast.error("Download failed");
+    }
+  };
+
+  const handleShare = async () => {
+    if (!resultUrl) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "My Virtual Try-On",
+          text: `Check out how ${garmentName} looks on me!`,
+          url: resultUrl,
+        });
+      } catch (error) {
+        console.log("Share cancelled");
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(resultUrl);
+      toast.success("Link copied to clipboard!");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+            Virtual Try-On
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Processing State */}
+          {isProcessing && !resultUrl && (
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="relative">
+                <Loader2 className="w-16 h-16 text-purple-500 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-semibold text-purple-600">
+                    {progress}%
+                  </span>
+                </div>
+              </div>
+              <p className="mt-4 text-gray-600 text-center">{statusMessage}</p>
+              <div className="w-full max-w-xs mt-4 bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Result State */}
+          {resultUrl && (
+            <div className="space-y-4">
+              <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden">
+                <Image
+                  src={resultUrl}
+                  alt="Try-on result"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
+                <p className="text-sm text-gray-700 text-center">
+                  ✨ Your virtual try-on with <strong>{garmentName}</strong> is
+                  ready!
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition font-medium"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="w-full py-3 text-gray-600 hover:text-gray-800 font-medium"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
+          {/* Error State */}
+          {!isProcessing && !resultUrl && statusMessage.includes("Failed") && (
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <X className="w-8 h-8 text-red-500" />
+              </div>
+              <p className="text-gray-600 text-center mb-4">{statusMessage}</p>
+              <button
+                onClick={() => {
+                  setResultUrl(null);
+                  setStatusMessage("");
+                  handleTryOn();
+                }}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+

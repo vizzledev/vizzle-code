@@ -1,0 +1,123 @@
+"use client";
+
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import { AiFillHeart } from "react-icons/ai";
+import { Trash2 } from "lucide-react";
+import { useWishlistStore } from "../store/wishlistStore";
+import { useRouter } from "next/navigation";
+
+interface Product {
+  id: number;
+  name: string;
+  image: string;
+  category: string;
+}
+
+export default function FavouritesPage() {
+  const router = useRouter();
+  const { wishlist, toggleWishlist } = useWishlistStore();
+  const [favouriteProducts, setFavouriteProducts] = useState<Product[]>([]);
+
+  // Sample products (should match your main page products)
+  const allProducts: Product[] = [
+    { id: 1, name: "Men Black Shirt", image: "/v3.jpg", category: "Men" },
+    { id: 2, name: "Women Grey Jogger", image: "/v2.jpg", category: "Women" },
+    { id: 3, name: "Kids Red T-Shirt", image: "/v5.jpg", category: "Kids" },
+    { id: 4, name: "Men Formal Coat", image: "/v4.jpg", category: "Men" },
+    { id: 5, name: "Women White Dress", image: "/v1.jpg", category: "Women" },
+    { id: 6, name: "Kids Blue Shorts", image: "/v6.jpg", category: "Kids" },
+  ];
+
+  useEffect(() => {
+    // Filter products that are in wishlist
+    const favourites = allProducts.filter((product) =>
+      wishlist.includes(product.id)
+    );
+    setFavouriteProducts(favourites);
+  }, [wishlist]);
+
+  const handleTryOn = (product: Product) => {
+    const existing = JSON.parse(localStorage.getItem("tryonProducts") || "[]");
+    const alreadyAdded = existing.some((p: Product) => p.id === product.id);
+    const updated = alreadyAdded ? existing : [...existing, product];
+    localStorage.setItem("tryonProducts", JSON.stringify(updated));
+    router.push("/main/tryon");
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50 p-6 pb-24">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <AiFillHeart className="text-red-500 text-3xl" />
+          My Favourites
+        </h1>
+        <p className="text-gray-600 text-sm mt-1">
+          {favouriteProducts.length} item{favouriteProducts.length !== 1 ? "s" : ""} saved
+        </p>
+      </div>
+
+      {/* Favourites Grid */}
+      {favouriteProducts.length > 0 ? (
+        <div className="grid grid-cols-2 gap-4">
+          {favouriteProducts.map((product) => (
+            <div key={product.id} className="flex flex-col items-start">
+              <div className="relative bg-[#f4f4f4] w-full h-[300px] rounded-[10px] overflow-hidden">
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover rounded-[10px]"
+                />
+                
+                {/* Remove from favourites button */}
+                <button
+                  onClick={() => toggleWishlist(product.id)}
+                  className="absolute top-2 right-2 bg-white/90 p-2 rounded-full hover:bg-white transition shadow-md"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
+
+              {/* Info */}
+              <div className="mt-2 w-full">
+                <p className="text-[15px] text-gray-800 font-medium truncate">
+                  {product.name}
+                </p>
+                <p className="text-xs text-gray-500">{product.category}</p>
+              </div>
+
+              {/* Try On Button */}
+              <button
+                onClick={() => handleTryOn(product)}
+                className="mt-2 w-full bg-black text-white text-sm py-2 rounded-lg hover:bg-gray-800 transition"
+              >
+                Try On
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20">
+          <AiFillHeart className="text-gray-300 text-6xl mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            No Favourites Yet
+          </h2>
+          <p className="text-gray-600 text-center mb-6">
+            Start adding products to your favourites
+            <br />
+            to see them here
+          </p>
+          <button
+            onClick={() => router.push("/main")}
+            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition"
+          >
+            Browse Products
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
