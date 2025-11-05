@@ -163,7 +163,7 @@ export default function TryOnModal({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
+            <Sparkles className="w-5 h-5 text-blue-500" />
             Virtual Try-On
           </h2>
           <button
@@ -180,9 +180,9 @@ export default function TryOnModal({
           {isProcessing && !resultUrl && (
             <div className="flex flex-col items-center justify-center py-10">
               <div className="relative">
-                <Loader2 className="w-16 h-16 text-purple-500 animate-spin" />
+                <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-semibold text-purple-600">
+                  <span className="text-sm font-semibold text-blue-600">
                     {progress}%
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export default function TryOnModal({
               <p className="mt-4 text-gray-600 text-center">{statusMessage}</p>
               <div className="w-full max-w-xs mt-4 bg-gray-200 rounded-full h-2">
                 <div
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -209,7 +209,7 @@ export default function TryOnModal({
                 />
               </div>
 
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
+              <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-gray-700 text-center">
                   ✨ Your virtual try-on with <strong>{garmentName}</strong> is
                   ready!
@@ -256,7 +256,7 @@ export default function TryOnModal({
                   setStatusMessage("");
                   handleTryOn();
                 }}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
                 Try Again
               </button>

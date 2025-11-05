@@ -197,14 +197,14 @@ function TryOnPageContent() {
               </CardContent>
             </Card>
 
-            <Button 
-              onClick={handleCreateTryOn}
-              disabled={!modelImage || !lastGarment}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              Create Virtual Try-On
-            </Button>
+                <Button
+                  onClick={handleCreateTryOn}
+                  disabled={!modelImage || !lastGarment}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Create Virtual Try-On
+                </Button>
           </TabsContent>
 
           {/* ---------- MULTIPLE GARMENTS ---------- */}
@@ -292,14 +292,14 @@ function TryOnPageContent() {
               </CardContent>
             </Card>
 
-            <Button 
-              onClick={handleCreateTryOn}
-              disabled={!modelImage || garments.length === 0}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              Create Virtual Try-On
-            </Button>
+                <Button
+                  onClick={handleCreateTryOn}
+                  disabled={!modelImage || garments.length === 0}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Create Virtual Try-On
+                </Button>
           </TabsContent>
         </Tabs>
       </div>
@@ -353,7 +353,7 @@ function TryOnPageContent() {
 
 export default function TryOnPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-50"><div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div><p>Loading...</p></div></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-50"><div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p>Loading...</p></div></div>}>
       <TryOnPageContent />
     </Suspense>
   );
