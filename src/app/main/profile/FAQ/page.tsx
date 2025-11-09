@@ -28,11 +28,7 @@ export default function TermsPage() {
       {/* 🔹 Content Section */}
       <div className="flex-1 p-6 mx-3 my-5 bg-white rounded-2xl shadow-md overflow-y-auto leading-relaxed text-gray-800">
         
-
-        <p className="mb-4">
-          Welcome to <span className="font-semibold">Vizzle</span> (“we”, “our”, “us”). 
-          These Terms and Conditions (“Terms”) govern your use of our mobile application (“App”) and related services.
-        </p>
+       
 
         {/* Section 1 */}
         <Section title="1. What is Vizzle?">

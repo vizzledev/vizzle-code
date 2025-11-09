@@ -25,6 +25,7 @@ function HomePageContent() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const { wishlist, toggleWishlist } = useFirebaseWishlist();
   const [products, setProducts] = useState<Product[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // ✅ Fetch products dynamically
   useEffect(() => {
@@ -73,18 +74,24 @@ function HomePageContent() {
 
   const categories = ["All", "Men", "Women", "Kids"];
 
-  // ✅ Filter logic
-  const filteredProducts = products.filter((p) => {
-    const productName = p.name?.toLowerCase() || "";
-    const productCategory = p.category?.toLowerCase() || "";
+  // ✅ Filter logic (search filters category)
+const filteredProducts = products.filter((p) => {
+  if (!p || !p.category) return false;
 
-    const matchesCategory =
-      selectedCategory === "All"
-        ? true
-        : productCategory === selectedCategory.toLowerCase();
+  const productCategory = p.category.toLowerCase().trim();;
+  const search = searchTerm.toLowerCase().trim();
+  const selected = selectedCategory.toLowerCase();
 
-    return matchesCategory;
-  });
+  // Matches category filter (All, Men, Women, Kids)
+  const matchesSelectedCategory =
+    selected === "all" ? true : productCategory === selected;
+
+  // Matches search term only with category (not product name)
+  const matchesSearch =
+    search === "" ? true : productCategory === search;
+
+  return matchesSelectedCategory && matchesSearch;
+});
 
   const handleTryOn = (product: Product) => {
     const existing = JSON.parse(localStorage.getItem("tryonProducts") || "[]");
@@ -105,8 +112,6 @@ function HomePageContent() {
 
     const handlePopState = (event: PopStateEvent) => {
       event.preventDefault();
-
-      // Custom centered toast
       toast.custom(
         (t) => (
           <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[9999]">
@@ -139,7 +144,6 @@ function HomePageContent() {
     };
 
     window.addEventListener("popstate", handlePopState);
-
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("popstate", handlePopState);
@@ -148,31 +152,67 @@ function HomePageContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white overflow-y-auto pb-24 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-      {/* Video Carousel */}
-      <div className="relative w-full h-64 overflow-x-auto flex snap-x snap-mandatory scroll-smooth scrollbar-none">
-        {["/BV1.mp4", "/BV2.mp4"].map((videoSrc, index) => (
-          <div key={index} className="relative flex-shrink-0 w-full h-64 snap-center">
-            <video
-              src={videoSrc}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="object-cover brightness-90 w-full h-full"
+
+      {/* ✅ Video Carousel with Swipe + Grey Dots */}
+<div className="relative w-full h-64 overflow-hidden">
+  <div
+    className="flex w-full h-64 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none"
+    onScroll={(e) => {
+      const scrollLeft = e.currentTarget.scrollLeft;
+      const width = e.currentTarget.clientWidth;
+      const index = Math.round(scrollLeft / width);
+      setCurrentIndex(index);
+    }}
+  >
+    {[
+      { src: "/BV1.mp4", title: "Try-on Cloths" },
+      { src: "/BV2.mp4", title: "Generate your Video" },
+      { src: "/BV3.mp4", title: "Try-on Accesories" },
+    ].map((video, index) => (
+      <div
+        key={index}
+        className="flex-shrink-0 w-full h-64 relative snap-center"
+      >
+        <video
+          src={video.src}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="object-cover w-full h-full brightness-90"
+        />
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute bottom-5 left-5 text-white">
+          <h1 className="text-2xl font-semibold">{video.title}</h1>
+        </div>
+      </div>
+    ))}
+  </div>
+
+
+        {/* Dots */}
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+          {["/BV1.mp4", "/BV2.mp4","/BV3.mp4"].map((_, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                const container = document.querySelector(".scroll-smooth");
+                if (container) {
+                  container.scrollTo({
+                    left: index * container.clientWidth,
+                    behavior: "smooth",
+                  });
+                }
+                setCurrentIndex(index);
+              }}
+              className={`w-3 h-3 rounded-full transition-all ${
+                currentIndex === index
+                  ? "bg-gray-300 scale-110"
+                  : "border border-white"
+              }`}
             />
-            <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute bottom-5 left-5 text-white">
-              <h1 className="text-2xl font-semibold">
-                {index === 0 ? "Discover your Style" : "New Arrivals"}
-              </h1>
-              <p className="text-sm opacity-90">
-                {index === 0
-                  ? "Try fashion that fits you best"
-                  : "Explore the latest trends"}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Admin Button */}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Eye, Trash2, X, Sparkles } from "lucide-react";
+import { Upload, Eye, Trash2, X, Sparkles, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -19,9 +19,9 @@ function TryOnPageContent() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [modelImage, setModelImage] = useState<string | null>(null);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
-  const [selectedGarmentForTryOn, setSelectedGarmentForTryOn] = useState<any>(null);
+  const [selectedGarmentForTryOn, setSelectedGarmentForTryOn] =
+    useState<any>(null);
 
-  // shared input ref for both tabs
   const modelInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -62,7 +62,6 @@ function TryOnPageContent() {
         localStorage.setItem("modelImage", result);
       };
       reader.readAsDataURL(file);
-      // clear the input so selecting same file later still triggers change
       event.currentTarget.value = "";
     }
   };
@@ -71,6 +70,25 @@ function TryOnPageContent() {
     e.stopPropagation();
     setModelImage(null);
     localStorage.removeItem("modelImage");
+  };
+
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const newGarment = {
+        id: Date.now(),
+        name: file.name,
+        image: reader.result as string,
+      };
+      const updatedGarments = [...garments, newGarment];
+      setGarments(updatedGarments);
+      localStorage.setItem("tryonProducts", JSON.stringify(updatedGarments));
+      toast.success("Garment added from gallery!");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const lastGarment =
@@ -90,7 +108,6 @@ function TryOnPageContent() {
       setSelectedGarmentForTryOn(lastGarment);
       setShowTryOnModal(true);
     } else {
-      // Multiple garments - for now, do first garment
       if (garments.length === 0) {
         toast.error("Please select at least one garment");
         return;
@@ -101,9 +118,11 @@ function TryOnPageContent() {
   };
 
   const handleTryOnSuccess = (resultUrl: string) => {
-    // Save result and navigate
     localStorage.setItem("tryonResult", resultUrl);
-    localStorage.setItem("tryonGarmentName", selectedGarmentForTryOn?.name || "");
+    localStorage.setItem(
+      "tryonGarmentName",
+      selectedGarmentForTryOn?.name || ""
+    );
     setTimeout(() => {
       router.push("/main/tryonresult");
     }, 1000);
@@ -125,9 +144,33 @@ function TryOnPageContent() {
           {/* ---------- SINGLE GARMENT ---------- */}
           <TabsContent value="single">
             <Card
-              className="border-dashed border-2 border-gray-300 rounded-lg mb-4 hover:bg-gray-50 cursor-pointer relative "
+              className="border-dashed border-2 border-gray-300 rounded-lg mb-4 hover:bg-gray-50 cursor-pointer relative"
               onClick={!lastGarment ? handleAddGarment : undefined}
             >
+              {/* 🖼️ Gallery Icon (top-left) */}
+              <button
+                type="button"
+                className="absolute top-2 left-2 bg-white/80 p-1 rounded-full shadow hover:bg-gray-100 z-20"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation(); // ✅ stop navigation
+                  const input = document.getElementById(
+                    "galleryUploadSingle"
+                  ) as HTMLInputElement | null;
+                  input?.click();
+                }}
+              >
+                <ImageIcon className="h-4 w-4 text-gray-600" />
+              </button>
+
+              <input
+                type="file"
+                id="galleryUploadSingle"
+                accept="image/*"
+                className="hidden"
+                onChange={handleGalleryUpload}
+              />
+
               <CardContent className="flex flex-col items-center justify-center py-10 mt-5">
                 {lastGarment ? (
                   <>
@@ -148,7 +191,9 @@ function TryOnPageContent() {
                         <Eye className="h-4 w-4 text-gray-600" />
                       </button>
                       <button
-                        onClick={() => handleDeleteGarment(garments.length - 1)}
+                        onClick={() =>
+                          handleDeleteGarment(garments.length - 1)
+                        }
                         className="p-1 hover:bg-gray-200 rounded"
                       >
                         <Trash2 className="h-4 w-4 text-gray-600" />
@@ -167,19 +212,19 @@ function TryOnPageContent() {
               </CardContent>
             </Card>
 
-            {/* Select Model (single tab) */}
+            {/* Select Model */}
             <Card
               className="border-dashed border-2 border-gray-300 rounded-lg mb-6 hover:bg-gray-50 cursor-pointer relative"
               onClick={() => modelInputRef.current?.click()}
             >
               <CardContent className="flex flex-col items-center justify-center py-10 relative mt-5">
                 {modelImage ? (
-                  <div className="relative w-40 h-40 mb-2  overflow-hidden mt-5">
+                  <div className="relative w-40 h-40 mb-2 overflow-hidden mt-5">
                     <Image
                       src={modelImage}
                       alt="Model"
                       fill
-                      className="object-contain "
+                      className="object-contain"
                     />
                     <button
                       onClick={handleRemoveModel}
@@ -197,14 +242,14 @@ function TryOnPageContent() {
               </CardContent>
             </Card>
 
-                <Button
-                  onClick={handleCreateTryOn}
-                  disabled={!modelImage || !lastGarment}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Create Virtual Try-On
-                </Button>
+            <Button
+              onClick={handleCreateTryOn}
+              disabled={!modelImage || !lastGarment}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create Virtual Try-On
+            </Button>
           </TabsContent>
 
           {/* ---------- MULTIPLE GARMENTS ---------- */}
@@ -247,8 +292,32 @@ function TryOnPageContent() {
                   <Card
                     key={`empty-${index}`}
                     onClick={handleAddGarment}
-                    className="border-dashed border-2 border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                    className="border-dashed border-2 border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer relative"
                   >
+                    {/* 🖼️ Gallery Icon (top-left) */}
+                    <button
+                      type="button"
+                      className="absolute top-2 left-2 bg-white/80 p-1 rounded-full shadow hover:bg-gray-100 z-20"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation(); // ✅ stop redirect
+                        const input = document.getElementById(
+                          `galleryUploadMultiple-${index}`
+                        ) as HTMLInputElement | null;
+                        input?.click();
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4 text-gray-600" />
+                    </button>
+
+                    <input
+                      type="file"
+                      id={`galleryUploadMultiple-${index}`}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleGalleryUpload}
+                    />
+
                     <CardContent className="flex flex-col items-center justify-center py-10 mt-5">
                       <Upload className="h-8 w-8 text-gray-400 mt-2" />
                       <p className="text-gray-500 text-sm text-center">
@@ -260,19 +329,19 @@ function TryOnPageContent() {
               })}
             </div>
 
-            {/* Select Model (multiple tab) - uses same shared input */}
+            {/* Select Model */}
             <Card
               className="border-dashed border-2 border-gray-300 rounded-lg mb-6 hover:bg-gray-50 cursor-pointer relative "
               onClick={() => modelInputRef.current?.click()}
             >
               <CardContent className="flex flex-col items-center justify-center py-10 relative">
                 {modelImage ? (
-                  <div className="relative w-40 h-48 mb-2  overflow-hidden mt-5">
+                  <div className="relative w-40 h-48 mb-2 overflow-hidden mt-5">
                     <Image
                       src={modelImage}
                       alt="Model"
                       fill
-                      className="object-contain "
+                      className="object-contain"
                     />
                     <button
                       onClick={handleRemoveModel}
@@ -284,22 +353,20 @@ function TryOnPageContent() {
                 ) : (
                   <>
                     <Upload className="h-8 w-8 text-gray-400 mt-2" />
-                    <p className="text-gray-500 text-sm">
-                      Upload photo
-                    </p>
+                    <p className="text-gray-500 text-sm">Upload photo</p>
                   </>
                 )}
               </CardContent>
             </Card>
 
-                <Button
-                  onClick={handleCreateTryOn}
-                  disabled={!modelImage || garments.length === 0}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Create Virtual Try-On
-                </Button>
+            <Button
+              onClick={handleCreateTryOn}
+              disabled={!modelImage || garments.length === 0}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create Virtual Try-On
+            </Button>
           </TabsContent>
         </Tabs>
       </div>
@@ -316,7 +383,6 @@ function TryOnPageContent() {
         />
       )}
 
-      {/* Single hidden input rendered ONCE and shared by both cards */}
       <input
         ref={modelInputRef}
         type="file"
@@ -325,7 +391,6 @@ function TryOnPageContent() {
         onChange={handleModelUpload}
       />
 
-      {/* Preview Modal */}
       {previewImage && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2">
           <div className="relative bg-white rounded-lg p-4 max-w-lg w-full">
@@ -353,7 +418,16 @@ function TryOnPageContent() {
 
 export default function TryOnPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-50"><div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p>Loading...</p></div></div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      }
+    >
       <TryOnPageContent />
     </Suspense>
   );

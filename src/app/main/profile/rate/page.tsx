@@ -49,10 +49,6 @@ export default function ReviewPage() {
       </div>
     </div>
   )}
-
-
-      
-
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Header */}

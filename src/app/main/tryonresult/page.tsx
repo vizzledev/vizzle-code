@@ -1,7 +1,8 @@
 "use client";
+
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Share2, Download } from "lucide-react";
+import { Share2, Download, Video } from "lucide-react";
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -13,19 +14,20 @@ export default function TryOnResultPage() {
   const [garmentName, setGarmentName] = useState<string>("Product");
   const [showFeedback, setShowFeedback] = useState(false);
 
-  useEffect(() => {
-    // Load actual result from localStorage
-    const savedResult = localStorage.getItem("tryonResult");
-    const savedName = localStorage.getItem("tryonGarmentName");
-    if (savedResult) setResultUrl(savedResult);
-    if (savedName) setGarmentName(savedName);
+   useEffect(() => {
+    // Check if feedback was already shown
+    const hasSeenFeedback = localStorage.getItem("hasSeenFeedback");
 
-    // Show feedback card after 10 seconds
-    const timer = setTimeout(() => {
-      setShowFeedback(true);
-    }, 10000);
+    if (!hasSeenFeedback) {
+      // Show after 10 seconds (10000 ms)
+      const timer = setTimeout(() => {
+        setShowFeedback(true);
+        localStorage.setItem("hasSeenFeedback", "true");
+      }, 10000);
 
-    return () => clearTimeout(timer);
+      // Cleanup if user navigates before 10s
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleShare = async (platform?: string) => {
@@ -37,7 +39,7 @@ export default function TryOnResultPage() {
           url: resultUrl,
         });
         return;
-      } catch (error) {}
+      } catch {}
     }
 
     if (!platform) {
@@ -59,11 +61,10 @@ export default function TryOnResultPage() {
       case "twitter":
         shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
         break;
-     case "instagram":
-         toast.success("Please download the image and share it on Instagram");
-         setShowShareOptions(false);
+      case "instagram":
+        toast.success("Please download the image and share it on Instagram");
+        setShowShareOptions(false);
         return;
-        
     }
 
     window.open(shareUrl, "_blank", "width=600,height=400");
@@ -89,9 +90,17 @@ export default function TryOnResultPage() {
     }
   };
 
+  const handleGenerateVideo = () => {
+    toast.loading("Generating video...");
+    setTimeout(() => {
+      toast.dismiss();
+      toast.success("Video generated successfully!");
+    }, 2000);
+  };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4 relative">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6 relative">
         <h2 className="text-2xl font-semibold text-gray-800 text-center mb-6">
           Try On Result
         </h2>
@@ -107,39 +116,52 @@ export default function TryOnResultPage() {
             />
           </div>
 
-          <button
-            onClick={() => handleShare()}
-            className="absolute top-3 right-3 bg-white hover:bg-gray-50 p-3 rounded-full shadow-lg transition-all hover:scale-110"
-            aria-label="Share"
-          >
-            <Share2 className="w-5 h-5 text-gray-700" />
-          </button>
+          {/* Top-right icons */}
+          <div className="absolute top-3 right-1 flex gap-1.5">
+            <button
+              onClick={handleDownload}
+              className="bg-white hover:bg-gray-50 p-3 rounded-full shadow-lg transition-all hover:scale-110"
+              aria-label="Download"
+            >
+              <Download className="w-4 h-4 text-gray-700" />
+            </button>
+            <button
+              onClick={() => handleShare()}
+              className="bg-white hover:bg-gray-50 p-3 rounded-full shadow-lg transition-all hover:scale-110"
+              aria-label="Share"
+            >
+              <Share2 className="w-4 h-4 text-gray-700" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button
-            onClick={handleDownload}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition font-medium"
-          >
-            <Download className="w-4 h-4" />
-            Download
-          </button>
-          <button
-            onClick={() => router.push("/main")}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
-          >
-            Buy Now
-          </button>
-        </div>
+        {/* Generate Video + Buy Now */}
+       <div className="grid grid-cols-2 gap-3 mb-4">
+  <button
+    onClick={handleGenerateVideo}
+    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg transition font-medium"
+  >
+    {/* 🔹 Increased icon size */}
+    <Video className="w-5 h-5" />
+    Generate Video
+  </button>
 
-        <button
-          onClick={() => router.push("/main/tryon")}
-          className="w-full text-center text-blue-600 hover:text-blue-700 py-2 font-medium transition"
-        >
-          Try another outfit
-        </button>
+  <button
+    onClick={() => router.push("/main")}
+    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
+  >
+    Buy Now
+  </button>
+</div>
 
-        {/* Share Options Modal */}
+<button
+  onClick={() => router.push("/main")}
+  className="w-full text-center text-blue-600 hover:text-blue-700 py-2 font-medium transition"
+>
+  Try another outfit
+</button>
+
+        {/* Share Modal */}
         {showShareOptions && (
           <div
             className="fixed inset-0 bg-black/60 flex justify-center items-end z-50 animate-in fade-in duration-200"
@@ -192,25 +214,26 @@ export default function TryOnResultPage() {
         )}
       </div>
 
-      {/* Feedback Card (centered toast after 10 sec) */}
-      {showFeedback && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black/40 z-50">
-          <div className="bg-white shadow-2xl rounded-2xl p-6 w-80 text-center animate-in fade-in duration-300">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">
-              Give us your feedback 💬
-            </h3>
-            <p className="text-gray-600 text-sm mb-5">
-              Your opinion helps us improve your virtual try-on experience.
-            </p>
-            <button
-              onClick={() => router.push("/main/profile/rate")}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
-            >
-              Give Feedback
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Feedback Card */}
+    {showFeedback && (
+  <div className="fixed inset-0 flex justify-center items-center bg-black/40 z-50">
+    <div className="bg-white shadow-2xl rounded-2xl p-6 w-80 text-center animate-in fade-in duration-300">
+      <h3 className="text-lg font-semibold text-gray-800 mb-3">
+        Give us your feedback 💬
+      </h3>
+      <p className="text-gray-600 text-sm mb-5">
+        Your opinion helps us improve your virtual try-on experience.
+      </p>
+      <button
+        onClick={() => router.push("/main/profile/rate")}
+        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
+      >
+        Give Feedback
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

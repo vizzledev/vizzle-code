@@ -47,7 +47,7 @@ export default function AuthPage() {
           Start Styling Now ✨
         </h2>
 
-        <p className="text-[20px] font-normal text-gray-600 leading-none mb-8">
+        <p className="text-[18px] font-normal text-gray-600 leading-none mb-8">
           Take your first step towards a new look with Vizzle&apos;s AR experience today!
         </p>
 
@@ -67,12 +67,7 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <button
-          onClick={() => router.push("/auth/login")}
-          className="border border-black text-black text-[20px] font-semibold px-6 py-2 rounded-lg hover:bg-gray-100 transition"
-        >
-          Continue as Guest
-        </button>
+        
       </div>
     </div>
   );

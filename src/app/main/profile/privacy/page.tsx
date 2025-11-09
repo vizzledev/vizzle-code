@@ -107,7 +107,7 @@ export default function PrivacyPage() {
             the purposes stated above or as required by law. You can request
             deletion of your data anytime by contacting us at{" "}
             <a
-              href="mailto:contact@vizzle.com"
+              href="mailto:info@vizzle.in"
               className="text-blue-600 hover:underline"
             >
               info@vizzle.in
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
             <br />
             To exercise these rights, contact us at{" "}
             <a
-              href="mailto:support@vizzle.com"
+              href="mailto:info@vizzle.in"
               className="text-blue-600 hover:underline"
             >
                info@vizzle.in
@@ -162,7 +162,7 @@ export default function PrivacyPage() {
           <h2 className="font-semibold text-gray-800">9. Changes to This Policy</h2>
           <p className="text-sm text-gray-700 leading-relaxed">
             We may update this Privacy Policy from time to time. Any changes
-            will be reflected by updating the “Effective Date” at the top of
+            will be reflected by updating the at the top of
             this page. Continued use of the app means you accept those changes.
           </p>
 
@@ -174,7 +174,7 @@ export default function PrivacyPage() {
             <br />
             📧{" "}
             <a
-              href="mailto:help@vizzle.com"
+              href="mailto:info@vizzle.in"
               className="text-blue-600 hover:underline"
             >
                info@vizzle.in
