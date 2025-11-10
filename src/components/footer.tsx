@@ -8,7 +8,7 @@ export default function Footer() {
 
   const links = [
     { href: "/main", label: "Home", icon: <Home size={22} /> },
-    { href: "/main/scan", label: "Scan", icon: <Camera size={22} /> },
+    { href: "/main/tryon", label: "Try-on", icon: <Camera size={22} /> },
     { href: "/main/bag", label: "Bag", icon: <ShoppingBag size={22} /> },
     { href: "/main/profile", label: "Profile", icon: <User size={22} /> },
   ];
