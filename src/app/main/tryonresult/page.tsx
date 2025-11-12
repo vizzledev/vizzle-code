@@ -13,7 +13,6 @@ export default function TryOnResultPage() {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [resultUrl, setResultUrl] = useState<string>("/v1.jpg");
   const [garmentName, setGarmentName] = useState<string>("Product");
-  const [showFeedback, setShowFeedback] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [buyLink, setBuyLink] = useState<string | null>(null);
@@ -40,22 +39,6 @@ export default function TryOnResultPage() {
 
     if (savedProductImage) {
       setProductImage(savedProductImage);
-    }
-  }, []);
-
-   useEffect(() => {
-    // Check if feedback was already shown
-    const hasSeenFeedback = localStorage.getItem("hasSeenFeedback");
-
-    if (!hasSeenFeedback) {
-      // Show after 10 seconds (10000 ms)
-      const timer = setTimeout(() => {
-        setShowFeedback(true);
-        localStorage.setItem("hasSeenFeedback", "true");
-      }, 10000);
-
-      // Cleanup if user navigates before 10s
-      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -321,25 +304,6 @@ export default function TryOnResultPage() {
         )}
       </div>
 
-      {/* Feedback Card */}
-    {showFeedback && (
-  <div className="fixed inset-0 flex justify-center items-center bg-black/40 z-50">
-    <div className="bg-white shadow-2xl rounded-2xl p-6 w-80 text-center animate-in fade-in duration-300">
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">
-        Give us your feedback 💬
-      </h3>
-      <p className="text-gray-600 text-sm mb-5">
-        Your opinion helps us improve your virtual try-on experience.
-      </p>
-      <button
-        onClick={() => router.push("/main/profile/rate")}
-        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
-      >
-        Give Feedback
-      </button>
-    </div>
-  </div>
-)}
 
     </div>
   );
